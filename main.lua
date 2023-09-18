@@ -3,9 +3,11 @@
 
 function love.load()
     -- load sprites
-    -- fox = love.graphics.newImage("sprites/fox.png")
-    -- monkey = love.graphics.newImage("sprites/monkey.png")
     Sprites = {
+        defenders = {
+            fox = love.graphics.newImage("sprites/defenders/fox.png"),
+            monkey = love.graphics.newImage("sprites/defenders/monkey.png")
+        },
         enemies = {
             balloon1 = love.graphics.newImage("sprites/enemies/balloon1.png"),
             balloon2 = love.graphics.newImage("sprites/enemies/balloon2.png"),
@@ -16,8 +18,9 @@ function love.load()
         }
     }
     
-    -- the sprites are 48*48 but should be rendered as 64*64
-    TileScaleFactor = 64 / 48
+    TileSize = 64
+    -- the sprites are 48*48
+    TileScaleFactor = TileSize / 48
 
     Map = require("Map")
 
@@ -39,7 +42,21 @@ function love.load()
         }
     }
 
+    Defenders = {
+        {
+            sprite = Sprites.defenders.fox,
+            damage = 25,
+            rate = 1
+        },
+        {
+            sprite = Sprites.defenders.monkey,
+            damage = 33,
+            rate = 2
+        }
+    }
+
     CurrentEnemies = {}
+    CurrentDefenders = {}
 
     Waves = {}
 
@@ -69,8 +86,52 @@ end
 
 
 
+local function spotAvailable(x, y)
+    -- occupied by defender?
+    for _, defender in pairs(CurrentDefenders) do
+        if defender.pos[1] == x and defender.pos[2] == y then
+            return false
+        end
+    end
+    -- occupied by tile?
+    for _, tile in pairs(Map.walkable) do
+        if tile[1] == x and tile[2] == y then
+            return false
+        end
+    end
+    -- occupied by obstacle?
+    for _, tile in pairs(Map.obstacles) do
+        if tile[1] == x and tile[2] == y then
+            return false
+        end
+    end
+
+    return true
+end
+local function tryPlaceDefender(x, y, defender)
+    if spotAvailable(x, y) then
+        -- place defender
+        table.insert(CurrentDefenders, {
+            type = defender,
+            pos = {x, y},
+            lastAttack = love.timer.getTime()
+        })
+        return true
+    end
+    return false
+end
+
 function love.update(dt)
     -- {4, 0},  --// TODO fix bug where enemy can only move x+ and y+
+
+    -- input
+    if love.mouse.isDown(1) then
+        local x, y = love.mouse.getPosition()
+        x = math.floor(x / TileSize)
+        y = math.floor(y / TileSize)
+
+        tryPlaceDefender(x, y, Defenders[1])
+    end
     
     -- move enemies
     for _, enemy in pairs(CurrentEnemies) do
@@ -119,6 +180,10 @@ end
 
 
 
+local function getImageScaleForNewDimensions( image, newWidth, newHeight )
+    local currentWidth, currentHeight = image:getDimensions()
+    return ( (newWidth or TileSize) / currentWidth ), ( (newHeight or TileSize) / currentHeight )
+end
 function love.draw()
 
     -- draw grass background
@@ -128,8 +193,8 @@ function love.draw()
     for _, pos in pairs(Map.walkable) do
         love.graphics.draw(
             Sprites.tiles.smoothStone,
-            pos[1] * 64,
-            pos[2] * 64,
+            pos[1] * TileSize,
+            pos[2] * TileSize,
             0,
             TileScaleFactor,
             TileScaleFactor
@@ -140,11 +205,24 @@ function love.draw()
     for _, enemy in pairs(CurrentEnemies) do
         love.graphics.draw(
             enemy.type.sprite,
-            enemy.pos[1] * 64,
-            enemy.pos[2] * 64,
+            enemy.pos[1] * TileSize,
+            enemy.pos[2] * TileSize,
             0,
             0.5,
             0.5
+        )
+    end
+
+    -- draw defenders
+    for _, defender in pairs(CurrentDefenders) do
+        local xs, ys = getImageScaleForNewDimensions(defender.type.sprite)
+        love.graphics.draw(
+            defender.type.sprite,
+            defender.pos[1] * TileSize,
+            defender.pos[2] * TileSize,
+            0,
+            xs,
+            ys
         )
     end
 
