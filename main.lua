@@ -122,8 +122,6 @@ local function tryPlaceDefender(x, y, defender)
 end
 
 function love.update(dt)
-    -- {4, 0},  --// TODO fix bug where enemy can only move x+ and y+
-
     -- input
     if love.mouse.isDown(1) then
         local x, y = love.mouse.getPosition()
@@ -139,26 +137,25 @@ function love.update(dt)
         local movementLeft = enemy.type.speed * dt
 
         -- move towards currentPath
-        
         local oldPos = enemy.pos
         local delta = {
-            x = math.abs(enemy.pos[1] - enemy.currentPath[1]),
-            y = math.abs(enemy.pos[2] - enemy.currentPath[2])
+            x = enemy.currentPath[1] - enemy.pos[1],
+            y = enemy.currentPath[2] - enemy.pos[2]
         }
-
         -- should move x?
-        if delta.x > movementLeft then
-            enemy.pos[1] = enemy.pos[1] + movementLeft
-        elseif delta.x > 0 then
+        if math.abs(delta.x) > movementLeft then
+            local direction = delta.x >= 0 and 1 or -1
+            enemy.pos[1] = enemy.pos[1] + movementLeft * direction
+        elseif math.abs(delta.x) > 0 then
             enemy.pos[1] = enemy.currentPath[1]
         end
         -- decrement movement available by how much moved on x axis
         movementLeft = movementLeft - math.abs(oldPos[1] - enemy.pos[1])
-
         -- should move y?
-        if delta.y > movementLeft then
-            enemy.pos[2] = enemy.pos[2] + movementLeft
-        elseif delta.y > 0 then
+        if math.abs(delta.y) > movementLeft then
+            local direction = delta.y >= 0 and 1 or -1
+            enemy.pos[2] = enemy.pos[2] + movementLeft * direction
+        elseif math.abs(delta.y) > 0 then
             enemy.pos[2] = enemy.currentPath[2]
         end
 
