@@ -14,31 +14,33 @@ function love.load()
             balloon3 = love.graphics.newImage("sprites/enemies/balloon3.png"),
         },
         tiles = {
-            smoothStone = love.graphics.newImage("sprites/tiles/smooth stone.png")
+            dirt = love.graphics.newImage("sprites/tiles/dirt.png"),
+            sand = love.graphics.newImage("sprites/tiles/sand.png"),
+            smoothStone = love.graphics.newImage("sprites/tiles/smooth stone.png"),
         }
     }
     
-    TileSize = 64
+    TileSize = 128
     -- the sprites are 48*48
     TileScaleFactor = TileSize / 48
 
-    Map = require("Map")
+    Map = require("map")
 
     Enemies = {
         {
             sprite = Sprites.enemies.balloon1,
             speed = 2,
-            hp = 25
+            hp = 100
         },
         {
             sprite = Sprites.enemies.balloon2,
             speed = 2.5,
-            hp = 50
+            hp = 150
         },
         {
             sprite = Sprites.enemies.balloon3,
             speed = 3,
-            hp = 100
+            hp = 200
         }
     }
 
@@ -46,12 +48,14 @@ function love.load()
         {
             sprite = Sprites.defenders.fox,
             damage = 25,
-            rate = 1
+            rate = 1,
+            range = 2.5
         },
         {
             sprite = Sprites.defenders.monkey,
             damage = 33,
-            rate = 2
+            rate = 2,
+            range = 3.5
         }
     }
 
@@ -60,28 +64,6 @@ function love.load()
 
     Waves = {}
 
-end
-
-
-
-function love.keypressed(k)
-    if k == "space" then
-        table.insert(CurrentEnemies, {
-            type = Enemies[1],
-            pos = {0, 0},
-            currentPathIndex = 1,
-            currentPath = Map.pathfinding[1],
-        })
-    end
-
-    -- debug (requires t.console=true in conf.lua)
-    if k == "return" then
-        debug.debug()
-    end
-    -- quit
-    if k == "escape" or k == "q" then
-        love.event.quit()
-    end
 end
 
 
@@ -108,18 +90,48 @@ local function spotAvailable(x, y)
 
     return true
 end
+
 local function tryPlaceDefender(x, y, defender)
     if spotAvailable(x, y) then
         -- place defender
         table.insert(CurrentDefenders, {
             type = defender,
             pos = {x, y},
-            lastAttack = love.timer.getTime()
+            lastAttack = 0--love.timer.getTime()
         })
         return true
     end
     return false
 end
+
+local function addEnemy(x, y, enemy)
+    table.insert(CurrentEnemies, {
+        type = enemy,
+        hp = enemy.hp,
+        pos = {x, y},
+        currentPathIndex = 1,
+        currentPath = Map.pathfinding[1],
+    })
+end
+
+
+
+function love.keypressed(k)
+    if k == "space" then
+        addEnemy(-1, 0, Enemies[1])
+    end
+
+    -- debug (requires t.console=true in conf.lua)
+    if k == "return" then
+        debug.debug()
+    end
+    -- quit
+    if k == "escape" or k == "q" then
+        love.event.quit()
+    end
+end
+
+
 
 function love.update(dt)
     -- input
@@ -173,6 +185,32 @@ function love.update(dt)
         end
 
     end
+
+    -- attack enemies
+    -- // TODO optimize: make balloons register when they're in range of a defender mby?
+    for _, defender in pairs(CurrentDefenders) do
+        if love.timer.getTime() - defender.lastAttack > defender.type.rate then
+            -- can attack, try to
+            for _, enemy in pairs(CurrentEnemies) do
+                local dx, dy = math.abs(enemy.pos[1] - defender.pos[1]), math.abs(enemy.pos[2] - defender.pos[2])
+                if math.sqrt(math.pow(dx, 2) + math.pow(dy, 2)) < defender.type.range then
+                    -- in range, attack
+                    enemy.hp = enemy.hp - defender.type.damage
+                    defender.lastAttack = love.timer.getTime()
+                    -- print(math.sqrt(math.pow(dx, 2) + math.pow(dy, 2)))
+                    print(enemy.hp)
+                    break
+                end
+            end
+        end
+    end
+
+    -- remove dead enemies (iterate backwards bc index shifts)
+    for enemy = #CurrentEnemies,1,-1 do
+        if CurrentEnemies[enemy].hp <= 0 then
+            table.remove(CurrentEnemies, enemy)
+        end
+    end
 end
 
 
@@ -182,7 +220,6 @@ local function getImageScaleForNewDimensions( image, newWidth, newHeight )
     return ( (newWidth or TileSize) / currentWidth ), ( (newHeight or TileSize) / currentHeight )
 end
 function love.draw()
-
     -- draw grass background
     love.graphics.setBackgroundColor(0.25, 0.75, 0.25, 1)
 
@@ -190,6 +227,18 @@ function love.draw()
     for _, pos in pairs(Map.walkable) do
         love.graphics.draw(
             Sprites.tiles.smoothStone,
+            pos[1] * TileSize,
+            pos[2] * TileSize,
+            0,
+            TileScaleFactor,
+            TileScaleFactor
+        )
+    end
+
+    -- draw obstacles
+    for _, pos in pairs(Map.obstacles) do
+        love.graphics.draw(
+            Sprites.tiles.sand,
             pos[1] * TileSize,
             pos[2] * TileSize,
             0,
@@ -221,6 +270,18 @@ function love.draw()
             xs,
             ys
         )
+        if love.timer.getTime() - defender.lastAttack < 0.25 then
+            -- just attacked someone
+            love.graphics.setColor(0.75, 0.25, 0.25, 0.25)
+            love.graphics.ellipse(
+                "fill",
+                defender.pos[1] * TileSize,-- + TileSize/2, //TODO fix attack from center
+                defender.pos[2] * TileSize,-- + TileSize/2,
+                defender.type.range * TileSize,
+                defender.type.range * TileSize
+            )
+            love.graphics.setColor(1, 1, 1, 1)
+        end
     end
 
 end

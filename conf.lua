@@ -12,8 +12,10 @@ function love.conf(t)
     -- t.window.y = 0
     t.window.width = 1280
     t.window.height = 720
+    -- t.window.width = 1920
+    -- t.window.height = 1080
 
-    -- t.window.borderless = true
+    t.window.borderless = true
     -- t.window.fullscreen = true
 
 

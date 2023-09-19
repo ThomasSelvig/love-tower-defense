@@ -33,9 +33,19 @@ return {
     },
     -- positions to disallow placement of defense
     obstacles = {
+        {5, 0},
+        {6, 1},
+        {7, 2},
+        {8, 3},
+        {9, 4},
 
+        {5, 4},
+        {6, 3},
+        {7, 2},
+        {8, 1},
+        {9, 0},
     },
-    -- paths are like vectors
+    -- paths are like destination points
     -- order is important here, unlike `walkable`
     pathfinding = {
         {4, 0},
@@ -43,11 +53,11 @@ return {
         {15, 5},
         {15, 11},
 
-        {0, 0},
-        -- spin
-        {4, 0},
-        {4, 4},
-        {0, 4},
-        {0, 0},
+        -- {0, 0},
+        -- -- spin
+        -- {4, 0},
+        -- {4, 4},
+        -- {0, 4},
+        -- {0, 0},
     }
 }
