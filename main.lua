@@ -44,6 +44,8 @@ function love.load()
         }
     }
 
+    --// TODO fix rate makes delay longer instead of shorter
+    --// TODO some feature to make the defenders serve unique purposes
     Defenders = {
         {
             sprite = Sprites.defenders.fox,
@@ -53,11 +55,13 @@ function love.load()
         },
         {
             sprite = Sprites.defenders.monkey,
-            damage = 33,
+            damage = 34,
             rate = 2,
             range = 3.5
         }
     }
+
+    GUI = require("gui")
 
     CurrentEnemies = {}
     CurrentDefenders = {}
@@ -117,30 +121,42 @@ end
 
 
 function love.keypressed(k)
-    if k == "space" then
-        addEnemy(-1, 0, Enemies[1])
+    -- buy menu
+    if Defenders[tonumber(k)] ~= nil then
+        -- valid defender index pressed
+        GUI.buyMenu.selectedDefender = tonumber(k)
     end
 
-    -- debug (requires t.console=true in conf.lua)
-    if k == "return" then
-        debug.debug()
-    end
     -- quit
     if k == "escape" or k == "q" then
         love.event.quit()
+    end
+
+    -- debug features
+    if k == "space" then
+        addEnemy(-1, 0, Enemies[1])
+    end
+    -- (requires t.console=true in conf.lua)
+    if k == "return" then
+        debug.debug()
     end
 end
 
 
 
 function love.update(dt)
+    local x, y = love.mouse.getPosition()
+    x = math.floor(x / TileSize)
+    y = math.floor(y / TileSize)
     -- input
     if love.mouse.isDown(1) then
-        local x, y = love.mouse.getPosition()
-        x = math.floor(x / TileSize)
-        y = math.floor(y / TileSize)
+        tryPlaceDefender(x, y, Defenders[GUI.buyMenu.selectedDefender])
+        -- // TODO editor mode: place blocks
 
-        tryPlaceDefender(x, y, Defenders[1])
+    end
+    if love.mouse.isDown(2) then
+        -- // TODO editor mode: remove blocks
+
     end
     
     -- move enemies
@@ -283,5 +299,27 @@ function love.draw()
             love.graphics.setColor(1, 1, 1, 1)
         end
     end
+
+    -- draw GUI
+    -- selected defender-to-buy
+    local defenderType = Defenders[GUI.buyMenu.selectedDefender]
+    local w, h = love.graphics.getDimensions()
+    -- love.graphics.circle("fill", w-TileSize/2, h-TileSize/2, TileSize / 2)
+    love.graphics.setColor(0.25, 0.25, 0.75, 1)
+    love.graphics.rectangle(
+        "fill",
+        w - TileSize - GUI.graphics.borderSize * 2,
+        h - TileSize - GUI.graphics.borderSize * 2,
+        TileSize + GUI.graphics.borderSize * 2,
+        TileSize + GUI.graphics.borderSize * 2
+    )
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.draw(
+        defenderType.sprite,
+        w - TileSize - GUI.graphics.borderSize,
+        h - TileSize - GUI.graphics.borderSize,
+        0,
+        getImageScaleForNewDimensions(defenderType.sprite)
+    )
 
 end
