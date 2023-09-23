@@ -2,71 +2,19 @@
 
 
 function love.load()
-    -- load sprites
-    Sprites = {
-        defenders = {
-            fox = love.graphics.newImage("sprites/defenders/fox.png"),
-            monkey = love.graphics.newImage("sprites/defenders/monkey.png")
-        },
-        enemies = {
-            balloon1 = love.graphics.newImage("sprites/enemies/balloon1.png"),
-            balloon2 = love.graphics.newImage("sprites/enemies/balloon2.png"),
-            balloon3 = love.graphics.newImage("sprites/enemies/balloon3.png"),
-        },
-        tiles = {
-            dirt = love.graphics.newImage("sprites/tiles/dirt.png"),
-            sand = love.graphics.newImage("sprites/tiles/sand.png"),
-            smoothStone = love.graphics.newImage("sprites/tiles/smooth stone.png"),
-        }
-    }
-    
+    Sprites = require("sprites")
+    GUI = require("gui")
     TileSize = 128
-    -- the sprites are 48*48
+    -- tile sprites are 48*48
     TileScaleFactor = TileSize / 48
 
     Map = require("map")
 
-    Enemies = {
-        {
-            sprite = Sprites.enemies.balloon1,
-            speed = 2,
-            hp = 100
-        },
-        {
-            sprite = Sprites.enemies.balloon2,
-            speed = 2.5,
-            hp = 150
-        },
-        {
-            sprite = Sprites.enemies.balloon3,
-            speed = 3,
-            hp = 200
-        }
-    }
-
-    --// TODO fix rate makes delay longer instead of shorter
-    --// TODO some feature to make the defenders serve unique purposes
-    Defenders = {
-        {
-            sprite = Sprites.defenders.fox,
-            damage = 25,
-            rate = 1,
-            range = 2.5
-        },
-        {
-            sprite = Sprites.defenders.monkey,
-            damage = 34,
-            rate = 2,
-            range = 3.5
-        }
-    }
-
-    GUI = require("gui")
+    Enemies = require("enemies")
+    Defenders = require("defenders")
 
     CurrentEnemies = {}
     CurrentDefenders = {}
-
-    Waves = {}
 
 end
 
