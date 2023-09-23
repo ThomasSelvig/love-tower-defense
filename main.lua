@@ -1,4 +1,4 @@
--- press F8 to launch game
+-- press F8 to launch game (if rebinded "Launch Löve")
 
 
 function love.load()
@@ -15,6 +15,9 @@ function love.load()
 
     CurrentEnemies = {}
     CurrentDefenders = {}
+
+    Joystick = nil
+    JoystickPressedMap = {}
 
 end
 
@@ -68,6 +71,38 @@ end
 
 
 
+function love.joystickadded(joystick)
+    print("Joystick connected: " .. joystick:getName()) -- "Buzz"
+    Joystick = joystick
+end
+
+---Triggered on buzz controller pressed
+---@param controller number 0-3 player
+---@param button any 0-4 (4=red, 0-3=yellow-blue)
+local function buzzPressed(controller, button)
+    -- print("Controller " .. controller .. ": " .. button)
+    -- print(GUI.controller.cursor.x, GUI.controller.cursor.y)
+
+    if button == 0 then
+        tryPlaceDefender(
+            GUI.controller.cursor.x,
+            GUI.controller.cursor.y,
+            Defenders[GUI.buyMenu.selectedDefender]
+        )
+    -- vim keybinds
+    elseif button == 4 then
+        GUI.controller.cursor.x = GUI.controller.cursor.x - 1
+    elseif button == 3 then
+        GUI.controller.cursor.y = GUI.controller.cursor.y + 1
+    elseif button == 2 then
+        GUI.controller.cursor.y = GUI.controller.cursor.y - 1
+    elseif button == 1 then
+        GUI.controller.cursor.x = GUI.controller.cursor.x + 1
+    end
+end
+
+
+
 function love.keypressed(k)
     -- buy menu
     if Defenders[tonumber(k)] ~= nil then
@@ -105,6 +140,17 @@ function love.update(dt)
     if love.mouse.isDown(2) then
         -- // TODO editor mode: remove blocks
 
+    end
+    -- trigger buzz input events
+    if Joystick:isConnected() and Joystick:getName() == "Buzz" then
+        for i = 1,20 do
+            local oldBtnVal = JoystickPressedMap[i]
+            JoystickPressedMap[i] = Joystick:isDown(i)
+            -- if wasnt pressed, but is pressed now
+            if not oldBtnVal and JoystickPressedMap[i] then
+                buzzPressed(math.floor((i-1) / 5), (i-1) % 5)
+            end
+        end
     end
     
     -- move enemies
@@ -179,10 +225,6 @@ end
 
 
 
-local function getImageScaleForNewDimensions( image, newWidth, newHeight )
-    local currentWidth, currentHeight = image:getDimensions()
-    return ( (newWidth or TileSize) / currentWidth ), ( (newHeight or TileSize) / currentHeight )
-end
 function love.draw()
     -- draw grass background
     love.graphics.setBackgroundColor(0.25, 0.75, 0.25, 1)
@@ -225,7 +267,7 @@ function love.draw()
 
     -- draw defenders
     for _, defender in pairs(CurrentDefenders) do
-        local xs, ys = getImageScaleForNewDimensions(defender.type.sprite)
+        local xs, ys = GUI.getImageScaleForNewDimensions(defender.type.sprite)
         love.graphics.draw(
             defender.type.sprite,
             defender.pos[1] * TileSize,
@@ -248,26 +290,6 @@ function love.draw()
         end
     end
 
-    -- draw GUI
-    -- selected defender-to-buy
-    local defenderType = Defenders[GUI.buyMenu.selectedDefender]
-    local w, h = love.graphics.getDimensions()
-    -- love.graphics.circle("fill", w-TileSize/2, h-TileSize/2, TileSize / 2)
-    love.graphics.setColor(0.25, 0.25, 0.75, 1)
-    love.graphics.rectangle(
-        "fill",
-        w - TileSize - GUI.graphics.borderSize * 2,
-        h - TileSize - GUI.graphics.borderSize * 2,
-        TileSize + GUI.graphics.borderSize * 2,
-        TileSize + GUI.graphics.borderSize * 2
-    )
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.draw(
-        defenderType.sprite,
-        w - TileSize - GUI.graphics.borderSize,
-        h - TileSize - GUI.graphics.borderSize,
-        0,
-        getImageScaleForNewDimensions(defenderType.sprite)
-    )
+    GUI.draw()
 
 end
