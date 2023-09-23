@@ -19,7 +19,7 @@ end
 
 function gui.draw()
     -- cursor
-    if Joystick:isConnected() then
+    if Joystick and Joystick:isConnected() then
         love.graphics.rectangle(
             "line",
             gui.controller.cursor.x * TileSize,

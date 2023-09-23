@@ -142,7 +142,7 @@ function love.update(dt)
 
     end
     -- trigger buzz input events
-    if Joystick:isConnected() and Joystick:getName() == "Buzz" then
+    if Joystick and Joystick:isConnected() and Joystick:getName() == "Buzz" then
         for i = 1,20 do
             local oldBtnVal = JoystickPressedMap[i]
             JoystickPressedMap[i] = Joystick:isDown(i)
